@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scratch Trainer – 10 דקות</title>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16161a;
+      --surface2: #1e1e24;
+      --accent: #e040fb;
+      --accent2: #7c4dff;
+      --green: #00e676;
+      --yellow: #ffea00;
+      --text: #f0f0f5;
+      --muted: #888;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    /* ---- Timer ring ---- */
+    .timer-wrap {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin-bottom: 28px;
+    }
+
+    .timer-wrap svg {
+      transform: rotate(-90deg);
+    }
+
+    .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 12; }
+    .ring-fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s linear, stroke 0.5s;
+    }
+
+    .timer-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-label .time {
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .timer-label .total-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ---- Exercise card ---- */
+    .exercise-card {
+      background: var(--surface);
+      border: 1px solid #2a2a35;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      width: 100%;
+      max-width: 460px;
+      margin-bottom: 20px;
+      text-align: center;
+      transition: opacity 0.3s;
+    }
+
+    .exercise-card.fading { opacity: 0; }
+
+    .exercise-tag {
+      display: inline-block;
+      background: var(--surface2);
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    .exercise-name {
+      font-size: 1.9rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .exercise-desc {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Exercise timer bar ---- */
+    .ex-bar-wrap {
+      width: 100%;
+      max-width: 460px;
+      background: var(--surface2);
+      border-radius: 8px;
+      height: 6px;
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+
+    .ex-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      border-radius: 8px;
+      transition: width 0.5s linear;
+    }
+
+    /* ---- Queue ---- */
+    .queue-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      text-align: right;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .queue {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 460px;
+      margin-bottom: 28px;
+    }
+
+    .queue-item {
+      background: var(--surface);
+      border: 1px solid #2a2a35;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      flex: 1 1 auto;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .queue-item.next {
+      border-color: var(--accent2);
+      color: var(--text);
+    }
+
+    /* ---- Controls ---- */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 12px 28px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    .btn-start {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #fff;
+    }
+
+    .btn-skip {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid #333;
+    }
+
+    .btn-reset {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid #333;
+    }
+
+    button:disabled { opacity: 0.35; cursor: default; }
+
+    /* ---- Settings ---- */
+    .settings {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .settings label { display: flex; align-items: center; gap: 6px; }
+
+    .settings select {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+    }
+
+    /* ---- Done screen ---- */
+    .done-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .done-screen.show { display: flex; }
+
+    .done-emoji { font-size: 3.5rem; }
+    .done-title { font-size: 1.8rem; font-weight: 700; color: var(--green); }
+    .done-sub { color: var(--muted); font-size: 0.95rem; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid #2a2a35;
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+    .stat-lbl { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+    /* ---- Pulse animation ---- */
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(224,64,251,0.4); }
+      70% { box-shadow: 0 0 0 16px rgba(224,64,251,0); }
+      100% { box-shadow: 0 0 0 0 rgba(224,64,251,0); }
+    }
+
+    .pulsing .timer-wrap { animation: pulse-ring 2s infinite; border-radius: 50%; }
+
+    /* ---- Recording ---- */
+    .record-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn-record {
+      background: var(--surface2);
+      color: #ff5252;
+      border: 1px solid #ff5252 !important;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+    }
+
+    .btn-record.active {
+      background: #ff5252;
+      color: #fff;
+      animation: pulse-rec 1.5s infinite;
+    }
+
+    @keyframes pulse-rec {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+
+    .rec-indicator {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      color: #ff5252;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .rec-indicator.show { display: flex; }
+
+    .rec-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5252;
+      animation: pulse-rec 1s infinite;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Scratch Trainer</h1>
+<p class="subtitle">10 דקות – תרגול יומי לסקראצ'ינג</p>
+
+<!-- Main session UI -->
+<div id="main">
+  <!-- Big timer ring -->
+  <div class="timer-wrap" id="timerWrap">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle class="ring-bg" cx="100" cy="100" r="88" />
+      <circle class="ring-fill" id="ringFill" cx="100" cy="100" r="88"
+        stroke-dasharray="553" stroke-dashoffset="0" />
+    </svg>
+    <div class="timer-label">
+      <span class="time" id="timerDisplay">10:00</span>
+      <span class="total-label">זמן נותר</span>
+    </div>
+  </div>
+
+  <!-- Exercise progress bar -->
+  <div class="ex-bar-wrap">
+    <div class="ex-bar-fill" id="exBar" style="width:100%"></div>
+  </div>
+
+  <!-- Current exercise card -->
+  <div class="exercise-card" id="exCard">
+    <div class="exercise-tag" id="exTag">קטגוריה</div>
+    <div class="exercise-name" id="exName">לחץ התחל</div>
+    <div class="exercise-desc" id="exDesc">בחר משך תרגיל ולחץ התחל כדי להתחיל את הסשן</div>
+  </div>
+
+  <!-- Upcoming exercises queue -->
+  <div class="queue-label">הבאים בתור:</div>
+  <div class="queue" id="queue"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn-start" id="btnStart" onclick="startSession()">התחל</button>
+    <button class="btn-skip" id="btnSkip" onclick="skipExercise()" disabled>דלג</button>
+    <button class="btn-reset" id="btnReset" onclick="resetSession()" disabled>איפוס</button>
+  </div>
+
+  <!-- Recording row -->
+  <div class="record-row">
+    <button class="btn-record" id="btnRecord" onclick="toggleRecording()">⏺ הקלט סשן</button>
+    <div class="rec-indicator" id="recIndicator">
+      <span class="rec-dot"></span> מקליט...
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings">
+    <label>
+      משך תרגיל:
+      <select id="exDuration" onchange="updateDuration()">
+        <option value="30">30 שניות</option>
+        <option value="45" selected>45 שניות</option>
+        <option value="60">60 שניות</option>
+        <option value="90">90 שניות</option>
+      </select>
+    </label>
+    <label>
+      סאונד:
+      <select id="soundMode">
+        <option value="on">פועל</option>
+        <option value="off">כבוי</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<!-- Done screen -->
+<div class="done-screen" id="doneScreen">
+  <div class="done-emoji">🎧</div>
+  <div class="done-title">כל הכבוד!</div>
+  <div class="done-sub">סיימת את הסשן של 10 דקות</div>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-num" id="statExercises">0</div>
+      <div class="stat-lbl">תרגילים בוצעו</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="statSkips">0</div>
+      <div class="stat-lbl">דילוגים</div>
+    </div>
+  </div>
+  <button class="btn-start" onclick="resetSession()">סשן חדש</button>
+</div>
+
+<script>
+// ─── Exercise database ───────────────────────────────────────────────────────
+const EXERCISES = [
+  // Basics
+  {
+    name: "Baby Scratch",
+    tag: "בסיסי",
+    desc: "הזזת הרזולב קדימה ואחורה בתנועה חלקה, ללא כיבוי הפיידר. התמקד בקצב קבוע.",
+  },
+  {
+    name: "Forward Scratch",
+    tag: "בסיסי",
+    desc: "לחץ על הרזולב לכיוון אחד בלבד (קדימה) ועצור בחזרה. דגש על יחידת הצליל קדימה.",
+  },
+  {
+    name: "Backward Scratch",
+    tag: "בסיסי",
+    desc: "צליל רק בכיוון אחורה. לך קדימה בשקט וסקרץ' בחזרה. שמור על ביט קבוע.",
+  },
+  // Fader techniques
+  {
+    name: "Chirp Scratch",
+    tag: "פיידר",
+    desc: "סקרץ' קדימה עם פיידר פתוח ↗ סגור לפני הסוף. אחורה בשקט. צ'יר = ציוץ.",
+  },
+  {
+    name: "Transform Scratch",
+    tag: "פיידר",
+    desc: "הזזת הרזולב ברצף תוך כיבוי/פתיחת הפיידר מהיר. נסה 3 ״קאטים״ בכל כיוון.",
+  },
+  {
+    name: "Scribble Scratch",
+    tag: "פיידר",
+    desc: "פיידר פתוח לחלוטין – הזזה מהירה של הרזולב קדימה-אחורה. קצב מהיר ורצוף.",
+  },
+  // Flare family
+  {
+    name: "1-Click Flare",
+    tag: "פלייר",
+    desc: "פיידר פתוח ← סקרץ' ← 1 קליק (סגור+פתח) בדיוק באמצע התנועה ← חזור.",
+  },
+  {
+    name: "2-Click Flare",
+    tag: "פלייר",
+    desc: "כמו פלייר אחד, אבל שני קליקים: אחד בתחילה ואחד בסוף כל כיוון.",
+  },
+  {
+    name: "Orbit Flare",
+    tag: "פלייר",
+    desc: "פלייר 1-קליק בשני הכיוונים ברצף: קדימה-קליק → אחורה-קליק. לולאה.",
+  },
+  {
+    name: "Crab Scratch",
+    tag: "פלייר",
+    desc: "ארבע אצבעות ״מקיישות״ על הפיידר בעוד האגודל מחזיק. מהירות ✕ 4. תרגל לאט קודם.",
+  },
+  // Combo & Rhythm
+  {
+    name: "Baby + Chirp Combo",
+    tag: "קומבו",
+    desc: "2 × בייבי סקרץ' ← 1 × צ'ירפ. חזור על הדפוס 8 פעמים. שמור על גרוב.",
+  },
+  {
+    name: "טמפו חופשי – ביט",
+    tag: "קצב",
+    desc: "בחר ביט ב-80 BPM והתאם את כל הסקרץ'ים לתבנית קצב. רבע, שמינית, שש-עשרה.",
+  },
+  {
+    name: "Flare + Baby Combo",
+    tag: "קומבו",
+    desc: "פלייר אחד → שני בייבי סקרץ'. חזור 8 פעמים. נסה להאיץ בהדרגה.",
+  },
+  {
+    name: "ריתמוס שניות",
+    tag: "קצב",
+    desc: "סקרץ' אחד לכל שנייה בדיוק. עבד עם מטרונום ב-60 BPM, כל תנועה = פעימה.",
+  },
+  {
+    name: "One-Hand Drill",
+    tag: "טכניקה",
+    desc: "שים יד אחת מאחורה. סקרץ' עם יד אחת בלבד 30 שניות, אחר כך תחלף ידיים.",
+  },
+  {
+    name: "Slow Motion",
+    tag: "טכניקה",
+    desc: "עשה כל תנועה אנטי-מהירה. מטרה: דיוק מושלם בכל קאט. אל תמהר!",
+  },
+  {
+    name: "Fader Isolation",
+    tag: "טכניקה",
+    desc: "החזק את הרזולב קבוע – עבוד רק עם הפיידר. תרגל פתיחה/סגירה מהירה ביד אחת.",
+  },
+  {
+    name: "Hydroplane Scratch",
+    tag: "מתקדם",
+    desc: "לחץ קל על הרזולב בזמן הזזה מהירה מאוד. הצליל 'מחליק'. תרגל לאט קודם.",
+  },
+  {
+    name: "Twiddle Scratch",
+    tag: "מתקדם",
+    desc: "ארבע אצבעות 'מגלגלות' על הפיידר מהמדד לזרת. כל אצבע = קאט נפרד.",
+  },
+  {
+    name: "מדיטציית גרוב",
+    tag: "גרוב",
+    desc: "בחר כל טכניקה ועשה אותה 2 דקות. אל תחשוב – פשוט תגרוב. שמור על ביט נינוח.",
+  },
+];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const TOTAL_SECONDS = 10 * 60;
+let sessionRunning = false;
+let sessionPaused = false;
+let totalRemaining = TOTAL_SECONDS;
+let exRemaining = 0;
+let exDuration = 45;
+let currentEx = null;
+let queue = [];
+let mainTimer = null;
+let exTimer = null;
+let skipsCount = 0;
+let exercisesCount = 0;
+let usedIndexes = [];
+
+// Audio context for beeps
+let audioCtx = null;
+let masterGain = null;
+let recordingDest = null;
+
+// Recording state
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+let micStream = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    recordingDest = audioCtx.createMediaStreamDestination();
+    masterGain.connect(audioCtx.destination);
+    masterGain.connect(recordingDest);
+  }
+  return audioCtx;
+}
+
+function beep(freq = 880, dur = 0.12, vol = 0.3) {
+  if (document.getElementById('soundMode').value === 'off') return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+// ─── Recording ────────────────────────────────────────────────────────────────
+async function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') await ctx.resume();
+
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const micSource = ctx.createMediaStreamSource(micStream);
+    micSource.connect(recordingDest);
+
+    recordedChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : 'audio/webm';
+    mediaRecorder = new MediaRecorder(recordingDest.stream, { mimeType });
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = saveRecording;
+    mediaRecorder.start(1000); // collect chunks every second
+    isRecording = true;
+    updateRecordUI();
+  } catch (err) {
+    alert('לא ניתן לגשת למיקרופון: ' + err.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    isRecording = false;
+    updateRecordUI();
+  }
+}
+
+function saveRecording() {
+  if (recordedChunks.length === 0) return;
+  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+  a.download = `scratch-session-${ts}.webm`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function updateRecordUI() {
+  const btn = document.getElementById('btnRecord');
+  const ind = document.getElementById('recIndicator');
+  if (isRecording) {
+    btn.textContent = '⏹ עצור הקלטה';
+    btn.classList.add('active');
+    ind.classList.add('show');
+  } else {
+    btn.textContent = '⏺ הקלט סשן';
+    btn.classList.remove('active');
+    ind.classList.remove('show');
+  }
+}
+
+function doubleBeep() {
+  beep(660, 0.1);
+  setTimeout(() => beep(880, 0.1), 150);
+}
+
+function tripleBeep() {
+  beep(660, 0.08);
+  setTimeout(() => beep(880, 0.08), 130);
+  setTimeout(() => beep(1100, 0.18, 0.5), 260);
+}
+
+// ─── Exercise selection ───────────────────────────────────────────────────────
+function pickExercise(exclude = []) {
+  let available = EXERCISES.map((_, i) => i).filter(i => !exclude.includes(i));
+  if (available.length === 0) {
+    usedIndexes = [];
+    available = EXERCISES.map((_, i) => i).filter(i => !exclude.includes(i));
+  }
+  const idx = available[Math.floor(Math.random() * available.length)];
+  usedIndexes.push(idx);
+  if (usedIndexes.length > Math.floor(EXERCISES.length * 0.6)) usedIndexes.shift();
+  return idx;
+}
+
+function buildQueue(count = 3) {
+  const q = [];
+  const excluded = currentEx !== null ? [currentEx] : [];
+  for (let i = 0; i < count; i++) {
+    const idx = pickExercise([...excluded, ...q]);
+    q.push(idx);
+  }
+  return q;
+}
+
+// ─── UI updates ───────────────────────────────────────────────────────────────
+function updateDuration() {
+  exDuration = parseInt(document.getElementById('exDuration').value);
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function updateRing() {
+  const circ = 2 * Math.PI * 88; // 553
+  const pct = totalRemaining / TOTAL_SECONDS;
+  const offset = circ * (1 - pct);
+  const ring = document.getElementById('ringFill');
+  ring.style.strokeDashoffset = offset;
+  // Color shifts from accent → yellow → green as time runs out
+  if (pct > 0.5) {
+    ring.style.stroke = 'var(--accent)';
+  } else if (pct > 0.2) {
+    ring.style.stroke = 'var(--yellow)';
+  } else {
+    ring.style.stroke = '#ff5252';
+  }
+}
+
+function updateExBar() {
+  const pct = (exRemaining / exDuration) * 100;
+  document.getElementById('exBar').style.width = pct + '%';
+}
+
+function renderQueue() {
+  const el = document.getElementById('queue');
+  el.innerHTML = '';
+  queue.forEach((idx, i) => {
+    const div = document.createElement('div');
+    div.className = 'queue-item' + (i === 0 ? ' next' : '');
+    div.textContent = EXERCISES[idx].name;
+    el.appendChild(div);
+  });
+}
+
+function showExercise(idx) {
+  const ex = EXERCISES[idx];
+  const card = document.getElementById('exCard');
+  card.classList.add('fading');
+  setTimeout(() => {
+    document.getElementById('exTag').textContent = ex.tag;
+    document.getElementById('exName').textContent = ex.name;
+    document.getElementById('exDesc').textContent = ex.desc;
+    card.classList.remove('fading');
+  }, 300);
+}
+
+// ─── Session logic ────────────────────────────────────────────────────────────
+function startSession() {
+  if (sessionRunning) return;
+  sessionRunning = true;
+
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnSkip').disabled = false;
+  document.getElementById('btnReset').disabled = false;
+  document.getElementById('exDuration').disabled = true;
+  document.getElementById('timerWrap').closest('body')
+    .querySelector('.pulsing')?.classList.remove('pulsing');
+
+  // Pick first exercise and build queue
+  currentEx = pickExercise();
+  queue = buildQueue(3);
+  showExercise(currentEx);
+  renderQueue();
+  exRemaining = exDuration;
+  exercisesCount = 1;
+
+  doubleBeep();
+  runTimers();
+}
+
+function runTimers() {
+  // Main session countdown (1 tick / second)
+  mainTimer = setInterval(() => {
+    totalRemaining--;
+    document.getElementById('timerDisplay').textContent = fmtTime(totalRemaining);
+    updateRing();
+
+    if (totalRemaining <= 0) {
+      endSession();
+      return;
+    }
+
+    // Warning beep at 1 min left
+    if (totalRemaining === 60) beep(440, 0.2, 0.4);
+  }, 1000);
+
+  // Exercise countdown
+  startExTimer();
+}
+
+function startExTimer() {
+  clearInterval(exTimer);
+  exRemaining = exDuration;
+  updateExBar();
+
+  exTimer = setInterval(() => {
+    exRemaining--;
+    updateExBar();
+    if (exRemaining <= 0) {
+      nextExercise(false);
+    }
+  }, 1000);
+}
+
+function nextExercise(skipped) {
+  if (!sessionRunning) return;
+  if (skipped) skipsCount++;
+  exercisesCount++;
+
+  beep(skipped ? 440 : 660, 0.1);
+
+  // Rotate queue
+  currentEx = queue.shift();
+  const newIdx = pickExercise([currentEx, ...queue]);
+  queue.push(newIdx);
+
+  showExercise(currentEx);
+  renderQueue();
+  startExTimer();
+}
+
+function skipExercise() {
+  if (!sessionRunning) return;
+  nextExercise(true);
+}
+
+function endSession() {
+  clearInterval(mainTimer);
+  clearInterval(exTimer);
+  sessionRunning = false;
+  tripleBeep();
+  stopRecording();
+
+  document.getElementById('main').style.display = 'none';
+  const done = document.getElementById('doneScreen');
+  done.classList.add('show');
+  document.getElementById('statExercises').textContent = exercisesCount;
+  document.getElementById('statSkips').textContent = skipsCount;
+}
+
+function resetSession() {
+  clearInterval(mainTimer);
+  clearInterval(exTimer);
+  stopRecording();
+  sessionRunning = false;
+  totalRemaining = TOTAL_SECONDS;
+  exRemaining = 0;
+  skipsCount = 0;
+  exercisesCount = 0;
+  currentEx = null;
+  queue = [];
+  usedIndexes = [];
+
+  document.getElementById('timerDisplay').textContent = fmtTime(TOTAL_SECONDS);
+  document.getElementById('exBar').style.width = '100%';
+  updateRing();
+
+  document.getElementById('exTag').textContent = 'קטגוריה';
+  document.getElementById('exName').textContent = 'לחץ התחל';
+  document.getElementById('exDesc').textContent = 'בחר משך תרגיל ולחץ התחל כדי להתחיל את הסשן';
+  document.getElementById('queue').innerHTML = '';
+
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnSkip').disabled = true;
+  document.getElementById('btnReset').disabled = true;
+  document.getElementById('exDuration').disabled = false;
+
+  document.getElementById('doneScreen').classList.remove('show');
+  document.getElementById('main').style.display = '';
+}
+
+// Init ring
+updateRing();
+</script>
+</body>
+</html>
