@@ -4,13 +4,23 @@ import { colors } from '../theme';
 
 const BPM_OPTIONS = [75, 90, 100, 120] as const;
 
+const DIFFICULTY_OPTIONS: { label: string; value: 0 | 1 | 2 | 3 | 4 }[] = [
+  { label: 'הכל', value: 0 },
+  { label: 'בסיס', value: 1 },
+  { label: 'בינוני', value: 2 },
+  { label: 'מתקדם', value: 3 },
+  { label: 'מומחה', value: 4 },
+];
+
 interface Props {
   bpm: number;
   onBpmChange: (bpm: 75 | 90 | 100 | 120) => void;
+  difficulty: 0 | 1 | 2 | 3 | 4;
+  onDifficultyChange: (d: 0 | 1 | 2 | 3 | 4) => void;
   onStart: () => void;
 }
 
-export default function IdleScreen({ bpm, onBpmChange, onStart }: Props) {
+export default function IdleScreen({ bpm, onBpmChange, difficulty, onDifficultyChange, onStart }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>🎛</Text>
@@ -18,19 +28,38 @@ export default function IdleScreen({ bpm, onBpmChange, onStart }: Props) {
       <Text style={styles.subtitle}>אימון סקראצינג יומי — 10 דקות</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>5 תרגילים רנדומליים • רמות מעורבות</Text>
+        <Text style={styles.cardLabel}>5 תרגילים רנדומליים</Text>
 
-        <View style={styles.bpmRow}>
+        <View style={styles.sectionRow}>
+          <Text style={styles.bpmLabel}>רמה:</Text>
+          <View style={styles.btnGroup}>
+            {DIFFICULTY_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.bpmBtn, difficulty === opt.value && styles.bpmBtnActive]}
+                onPress={() => onDifficultyChange(opt.value)}
+              >
+                <Text style={[styles.bpmBtnText, difficulty === opt.value && styles.bpmBtnTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.sectionRow}>
           <Text style={styles.bpmLabel}>BPM:</Text>
-          {BPM_OPTIONS.map((b) => (
-            <TouchableOpacity
-              key={b}
-              style={[styles.bpmBtn, bpm === b && styles.bpmBtnActive]}
-              onPress={() => onBpmChange(b)}
-            >
-              <Text style={[styles.bpmBtnText, bpm === b && styles.bpmBtnTextActive]}>{b}</Text>
-            </TouchableOpacity>
-          ))}
+          <View style={styles.btnGroup}>
+            {BPM_OPTIONS.map((b) => (
+              <TouchableOpacity
+                key={b}
+                style={[styles.bpmBtn, bpm === b && styles.bpmBtnActive]}
+                onPress={() => onBpmChange(b)}
+              >
+                <Text style={[styles.bpmBtnText, bpm === b && styles.bpmBtnTextActive]}>{b}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
 
@@ -77,10 +106,18 @@ const styles = StyleSheet.create({
     color: colors.muted,
     textAlign: 'center',
   },
-  bpmRow: {
+  sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    width: '100%',
+  },
+  btnGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   bpmLabel: {
     fontSize: 14,

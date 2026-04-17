@@ -482,24 +482,19 @@ export const EXERCISES: Exercise[] = [
 
 export const TOTAL_SECONDS = 10 * 60;
 
-export function generateSessionPlan(exercises: Exercise[]) {
-  const shuffled = [...exercises].sort(() => Math.random() - 0.5);
-  const easy = shuffled.filter((e) => e.difficulty <= 2);
-  const hard = shuffled.filter((e) => e.difficulty >= 3);
+export function generateSessionPlan(exercises: Exercise[], difficulty: 0 | 1 | 2 | 3 | 4 = 0) {
+  const pool = difficulty === 0 ? exercises : exercises.filter((e) => e.difficulty === difficulty);
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
 
   const picked: Exercise[] = [];
   const used = new Set<string>();
 
-  const pick = (pool: Exercise[]) => {
-    const found = pool.find((e) => !used.has(e.name));
+  const pick = (list: Exercise[]) => {
+    const found = list.find((e) => !used.has(e.name));
     if (found) { used.add(found.name); picked.push(found); }
   };
 
-  pick(easy);
-  pick(easy);
-  pick(hard);
-  pick(hard);
-  pick(shuffled);
+  for (let i = 0; i < 5; i++) pick(shuffled);
 
   const totalRaw = picked.reduce((s, e) => s + e.duration, 0);
   const scale = TOTAL_SECONDS / totalRaw;

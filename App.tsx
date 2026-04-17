@@ -18,6 +18,7 @@ export default function App() {
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [sessionPlan, setSessionPlan] = useState<SessionExercise[]>([]);
   const [bpm, setBpm] = useState<75 | 90 | 100 | 120>(90);
+  const [difficulty, setDifficulty] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [completedCount, setCompletedCount] = useState(0);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -82,7 +83,7 @@ export default function App() {
   }, [currentSegmentIdx]);
 
   const handleStart = useCallback(() => {
-    const plan = generateSessionPlan(EXERCISES);
+    const plan = generateSessionPlan(EXERCISES, difficulty);
     setSessionPlan(plan);
     setTotalElapsed(0);
     setSegmentElapsed(0);
@@ -125,7 +126,13 @@ export default function App() {
       </View>
 
       {phase === 'idle' && (
-        <IdleScreen bpm={bpm} onBpmChange={setBpm} onStart={handleStart} />
+        <IdleScreen
+          bpm={bpm}
+          onBpmChange={setBpm}
+          difficulty={difficulty}
+          onDifficultyChange={setDifficulty}
+          onStart={handleStart}
+        />
       )}
 
       {(phase === 'running' || phase === 'paused') && sessionPlan.length > 0 && (
